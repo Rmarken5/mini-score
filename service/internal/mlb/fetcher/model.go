@@ -29,7 +29,7 @@ func (fsr *FetchScoreResponse) String() string {
 	if fsr.GameData.Status.StatusCode == "F" {
 		inning = fsr.GameData.Status.DetailedState
 	} else {
-		inning = fsr.LiveData.Linescore.InningHalf + fsr.LiveData.Linescore.CurrentInningOrdinal
+		inning = fsr.LiveData.Linescore.InningHalf + " " + fsr.LiveData.Linescore.CurrentInningOrdinal
 	}
 	inningString := fmt.Sprintf("* %-15s *", inning)
 	home := fmt.Sprintf("* %s    %s *", fsr.GameData.Teams.Home.String(), fsr.LiveData.Linescore.Teams.Home.String())

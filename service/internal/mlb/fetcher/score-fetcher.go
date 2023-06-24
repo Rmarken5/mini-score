@@ -28,7 +28,7 @@ const (
 )
 
 func NewFetcher(httpClient *http.Client) *Fetcher {
-	return &Fetcher{httpClient: httpClient}
+	return &Fetcher{apiURL: mlbAPIDomain, httpClient: httpClient}
 }
 
 func FetchGame(fetcher GameFetcher, time time.Time) ([]Game, error) {

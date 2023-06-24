@@ -76,8 +76,7 @@ func TestWriter_Write(t *testing.T) {
 * AZ      5  9  0 *
 * Final           *
 * WSH     3  9  2 *
-* * * * * * * * * *
-`
+* * * * * * * * * *`
 
 	assert.Equal(t, expectedString, string(write))
 }
