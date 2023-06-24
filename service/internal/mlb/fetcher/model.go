@@ -1,6 +1,9 @@
 package fetcher
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type FetchGamesResponse struct {
 	Dates []Date `json:"dates"`
@@ -23,6 +26,17 @@ type FetchScoreResponse struct {
 	GameData GameData `json:"gameData"`
 }
 
+type ByGameTime []*FetchScoreResponse
+
+func (a ByGameTime) Len() int      { return len(a) }
+func (a ByGameTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByGameTime) Less(i, j int) bool {
+	if a[i].GameData.DateTime.DateTime.Equal(a[j].GameData.DateTime.DateTime) {
+		return a[i].GameData.Teams.Home.TeamName < a[j].GameData.Teams.Home.TeamName
+	}
+	return a[i].GameData.DateTime.DateTime.Before(a[j].GameData.DateTime.DateTime)
+}
+
 func (fsr *FetchScoreResponse) String() string {
 	inning := ""
 	away := fmt.Sprintf("* %s    %s *", fsr.GameData.Teams.Away.String(), fsr.LiveData.Linescore.Teams.Away.String())
@@ -42,8 +56,18 @@ type LiveData struct {
 }
 
 type GameData struct {
-	Status GameStatus `json:"status"`
-	Teams  Teams      `json:"teams"`
+	Status   GameStatus `json:"status"`
+	Teams    Teams      `json:"teams"`
+	DateTime DateTime   `json:"datetime"`
+}
+
+type DateTime struct {
+	DateTime     time.Time `json:"dateTime"`
+	OriginalDate string    `json:"originalDate"`
+	OfficialDate string    `json:"officialDate"`
+	DayNight     string    `json:"dayNight"`
+	Time         string    `json:"time"`
+	AMPM         string    `json:"ampm"`
 }
 
 type Teams struct {

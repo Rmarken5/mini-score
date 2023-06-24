@@ -5,7 +5,6 @@ import (
 	"github.com/rmarken5/mini-score/service/internal/http"
 	"github.com/rmarken5/mini-score/service/internal/mlb/facade"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
-	"github.com/rmarken5/mini-score/service/internal/mlb/writer"
 	"log"
 	h "net/http"
 )
@@ -13,8 +12,7 @@ import (
 func main() {
 	httpClient := &h.Client{}
 	fetch := fetcher.NewFetcher(httpClient)
-	write := writer.NewWriter()
-	f := facade.NewScoreFacadeImpl(fetch, fetch, write)
+	f := facade.NewScoreFacadeImpl(fetch, fetch)
 	s := http.NewServer(f)
 	e := echo.New()
 	e.GET("/mlb/:date", s.PrintGames)
