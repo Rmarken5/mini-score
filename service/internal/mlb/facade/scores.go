@@ -1,6 +1,7 @@
 package facade
 
 import (
+	"context"
 	"fmt"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"github.com/rmarken5/mini-score/service/internal/mlb/writer"
@@ -11,7 +12,7 @@ import (
 
 type (
 	ScoreFacade interface {
-		ProcessScores(date time.Time) (string, error)
+		processScores(ctx context.Context, date time.Time) (string, error)
 	}
 
 	ScoreFacadeImpl struct {
@@ -27,7 +28,16 @@ func NewScoreFacadeImpl(gameFetcher fetcher.GameFetcher, scoreFetcher fetcher.Sc
 	}
 }
 
-func (sf *ScoreFacadeImpl) ProcessScores(date time.Time) (string, error) {
+func ProcessScores(facade ScoreFacade, ctx context.Context, date time.Time) (string, error) {
+	return facade.processScores(ctx, date)
+}
+
+func (sf *ScoreFacadeImpl) processScores(ctx context.Context, date time.Time) (string, error) {
+	gamesPerLine := 2
+	if !IsMobile(ctx) {
+		gamesPerLine = 5
+	}
+
 	games, err := sf.gameFetcher.FetchGames(date)
 	if err != nil {
 		return "", err
@@ -51,7 +61,7 @@ func (sf *ScoreFacadeImpl) ProcessScores(date time.Time) (string, error) {
 	}
 	wg.Wait()
 	sort.Sort(fetcher.ByGameTime(scores))
-	w := writer.NewPainter(3)
+	w := writer.NewPainter(gamesPerLine)
 	s, err := w.Write(scores)
 	if err != nil {
 		return "", err

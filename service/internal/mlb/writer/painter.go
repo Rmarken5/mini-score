@@ -24,15 +24,19 @@ func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 	p.Games++
 	p.AwayTeamLine = append(p.AwayTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Away.String(), score.LiveData.Linescore.Teams.Away.String()))
 	p.HomeTeamLine = append(p.HomeTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Home.String(), score.LiveData.Linescore.Teams.Home.String()))
-	var inning string
-	if score.GameData.Status.StatusCode == "F" {
-		inning = score.GameData.Status.DetailedState
-	} else {
-		inning = score.LiveData.Linescore.InningHalf + " " + score.LiveData.Linescore.CurrentInningOrdinal
+	var gameStatus string
+	switch score.GameData.Status.StatusCode {
+	case "F":
+		gameStatus = score.GameData.Status.DetailedState
+	case "P", "S":
+		gameStatus = fmt.Sprintf("%s %s", score.GameData.DateTime.Time, score.GameData.DateTime.AMPM)
+	default:
+		gameStatus = fmt.Sprintf("%s %s", score.LiveData.Linescore.InningHalf, score.LiveData.Linescore.CurrentInningOrdinal)
 	}
-	inningString := fmt.Sprintf(" * %-15s * ", inning)
 
-	p.GameProgressLine = append(p.GameProgressLine, inningString)
+	gameStatusString := fmt.Sprintf(" * %-15s * ", gameStatus)
+
+	p.GameProgressLine = append(p.GameProgressLine, gameStatusString)
 
 }
 
@@ -46,7 +50,7 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 	for i := 0; i < p.Games; i += p.gamesPerLine {
 		var limit int = p.gamesPerLine
 		if p.Games < i+p.gamesPerLine {
-			limit = (i + p.gamesPerLine) - p.Games + 1
+			limit = p.gamesPerLine - ((i + p.gamesPerLine) - p.Games)
 		}
 
 		for j := 0; j < limit; j++ {

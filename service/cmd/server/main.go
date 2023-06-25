@@ -15,7 +15,9 @@ func main() {
 	f := facade.NewScoreFacadeImpl(fetch, fetch)
 	s := http.NewServer(f)
 	e := echo.New()
+	e.Use(facade.HandleUserAgent)
 	e.GET("/mlb/:date", s.PrintGames)
+	e.GET("/mlb", s.PrintGames)
 
 	httpServer := h.Server{Addr: ":8080", Handler: e}
 

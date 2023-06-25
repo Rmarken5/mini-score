@@ -30,7 +30,7 @@ func (s *Server) PrintGames(c echo.Context) error {
 		return err
 	}
 
-	scores, err := s.facade.ProcessScores(dateObj)
+	scores, err := facade.ProcessScores(s.facade, c.Request().Context(), dateObj)
 	if err != nil {
 		return err
 	}
