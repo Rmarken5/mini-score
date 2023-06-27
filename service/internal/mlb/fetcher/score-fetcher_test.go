@@ -3,6 +3,7 @@ package fetcher
 import (
 	_ "embed"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,6 +67,8 @@ func TestFetcher_FetchGames(t *testing.T) {
 }
 
 func TestFetcher_FetchScore(t *testing.T) {
+	tyme, err := time.Parse("2006-01-02 3:04 PM", "2023-06-22 5:05 PM")
+	require.NoError(t, err)
 	testCases := map[string]struct {
 		mockHttpClient   func() *httptest.Server
 		expectedResponse FetchScoreResponse
@@ -88,31 +91,32 @@ func TestFetcher_FetchScore(t *testing.T) {
 				return mockServer
 			},
 			expectedResponse: FetchScoreResponse{
-				LiveData: LiveData{Linescore: Linescore{
-					CurrentInning:        9,
-					CurrentInningOrdinal: "9th",
-					InningState:          "Bottom",
-					InningHalf:           "Bottom",
-					IsTopInning:          false,
-					ScheduledInnings:     9,
-					Teams: TeamStats{
-						Home: TeamStat{
-							Runs:       3,
-							Hits:       9,
-							Errors:     2,
-							LeftOnBase: 6,
+				LiveData: LiveData{
+					Linescore: Linescore{
+						CurrentInning:        9,
+						CurrentInningOrdinal: "9th",
+						InningState:          "Bottom",
+						InningHalf:           "Bottom",
+						IsTopInning:          false,
+						ScheduledInnings:     9,
+						Teams: TeamStats{
+							Home: TeamStat{
+								Runs:       3,
+								Hits:       9,
+								Errors:     2,
+								LeftOnBase: 6,
+							},
+							Away: TeamStat{
+								Runs:       5,
+								Hits:       9,
+								Errors:     0,
+								LeftOnBase: 6,
+							},
 						},
-						Away: TeamStat{
-							Runs:       5,
-							Hits:       9,
-							Errors:     0,
-							LeftOnBase: 6,
-						},
-					},
-					Balls:   3,
-					Strikes: 2,
-					Outs:    3,
-				}},
+						Balls:   3,
+						Strikes: 2,
+						Outs:    3,
+					}},
 				GameData: GameData{
 					Status: GameStatus{
 						AbstractGameState: "Final",
@@ -141,6 +145,14 @@ func TestFetcher_FetchScore(t *testing.T) {
 							ClubName:      "Nationals",
 							Active:        true,
 						},
+					},
+					DateTime: DateTime{
+						DateTime:     tyme,
+						OriginalDate: "2023-06-22",
+						OfficialDate: "2023-06-22",
+						DayNight:     "day",
+						Time:         "1:05",
+						AMPM:         "PM",
 					},
 				},
 			},

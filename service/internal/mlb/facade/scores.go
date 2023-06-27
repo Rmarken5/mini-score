@@ -61,7 +61,7 @@ func (sf *ScoreFacadeImpl) processScores(ctx context.Context, date time.Time) (s
 	}
 	wg.Wait()
 	sort.Sort(fetcher.ByGameTime(scores))
-	w := writer.NewPainter(gamesPerLine)
+	w := writer.NewPainter(gamesPerLine, date)
 	s, err := w.Write(scores)
 	if err != nil {
 		return "", err

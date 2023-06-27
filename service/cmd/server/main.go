@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/rmarken5/mini-score/service/internal/http"
 	"github.com/rmarken5/mini-score/service/internal/mlb/facade"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
@@ -16,6 +17,9 @@ func main() {
 	s := http.NewServer(f)
 	e := echo.New()
 	e.Use(facade.HandleUserAgent)
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 5,
+	}))
 	e.GET("/mlb/:date", s.PrintGames)
 	e.GET("/mlb", s.PrintGames)
 

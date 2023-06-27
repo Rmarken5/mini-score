@@ -1,13 +1,23 @@
 package writer
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"strings"
+	"text/template"
+	"time"
 )
+
+//go:embed templates/game-time.gotmpl
+var gtTemplate embed.FS
+
+var layout = "Jan, 02 2006"
 
 type (
 	Painter struct {
+		date             time.Time
 		gamesPerLine     int
 		Games            int
 		AwayTeamLine     []string
@@ -16,8 +26,8 @@ type (
 	}
 )
 
-func NewPainter(gamesPerLine int) *Painter {
-	return &Painter{gamesPerLine: gamesPerLine}
+func NewPainter(gamesPerLine int, date time.Time) *Painter {
+	return &Painter{gamesPerLine: gamesPerLine, date: date}
 }
 
 func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
@@ -78,5 +88,25 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 		}
 		sb.Write([]byte("\n"))
 	}
-	return sb.String(), nil
+
+	file, err := template.ParseFS(gtTemplate, "templates/game-time.gotmpl")
+	if err != nil {
+		return "", err
+	}
+
+	buff := bytes.NewBuffer(nil)
+
+	err = file.Execute(buff, struct {
+		Time  string
+		Games string
+	}{
+		Time:  p.date.Format(layout),
+		Games: sb.String(),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return buff.String(), nil
+
 }
