@@ -8,9 +8,22 @@ import (
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"log"
 	h "net/http"
+	"time"
+	_ "time/tzdata"
 )
 
+func init() {
+	timezone := "America/New_York"
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+	// Set the default timezone
+	time.Local = loc
+}
+
 func main() {
+
 	httpClient := &h.Client{}
 	fetch := fetcher.NewFetcher(httpClient)
 	f := facade.NewScoreFacadeImpl(fetch, fetch)
