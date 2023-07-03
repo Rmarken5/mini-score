@@ -1,4 +1,4 @@
-package facade
+package middleware
 
 import (
 	"context"

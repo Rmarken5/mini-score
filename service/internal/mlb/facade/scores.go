@@ -3,6 +3,7 @@ package facade
 import (
 	"context"
 	"fmt"
+	"github.com/rmarken5/mini-score/service/internal/general/http/middleware"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"github.com/rmarken5/mini-score/service/internal/mlb/writer"
 	"sort"
@@ -34,7 +35,7 @@ func ProcessScores(facade ScoreFacade, ctx context.Context, date time.Time) (str
 
 func (sf *ScoreFacadeImpl) processScores(ctx context.Context, date time.Time) (string, error) {
 	gamesPerLine := 2
-	if !IsMobile(ctx) {
+	if !middleware.IsMobile(ctx) {
 		gamesPerLine = 5
 	}
 

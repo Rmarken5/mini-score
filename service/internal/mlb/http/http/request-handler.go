@@ -35,6 +35,7 @@ func (s *Server) PrintGames(c echo.Context) error {
 		return err
 	}
 
+	c.Set("Content-Type", "text/plain")
 	return c.String(http.StatusOK, scores)
 
 }
