@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
+	"math"
 	"strings"
 	"text/template"
 	"time"
@@ -15,10 +16,12 @@ var gtTemplate embed.FS
 
 var layout = "Jan, 02 2006"
 
+const topAndBottomBorder = " * * * * * * * * * * "
+
 type (
 	Painter struct {
 		date             time.Time
-		gamesPerLine     int
+		lineLength       int
 		Games            int
 		AwayTeamLine     []string
 		GameProgressLine []string
@@ -26,8 +29,8 @@ type (
 	}
 )
 
-func NewPainter(gamesPerLine int, date time.Time) *Painter {
-	return &Painter{gamesPerLine: gamesPerLine, date: date}
+func NewPainter(lineLength int, date time.Time) *Painter {
+	return &Painter{lineLength: lineLength, date: date}
 }
 
 func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
@@ -57,14 +60,14 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 
 	sb := strings.Builder{}
 
-	for i := 0; i < p.Games; i += p.gamesPerLine {
-		var limit int = p.gamesPerLine
-		if p.Games < i+p.gamesPerLine {
-			limit = p.gamesPerLine - ((i + p.gamesPerLine) - p.Games)
+	for i := 0; i < p.Games; i += p.lineLength {
+		var limit int = p.lineLength
+		if p.Games < i+p.lineLength {
+			limit = p.lineLength - ((i + p.lineLength) - p.Games)
 		}
 
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" * * * * * * * * * * ")
+			sb.WriteString(topAndBottomBorder)
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
@@ -84,7 +87,7 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" * * * * * * * * * * ")
+			sb.WriteString(topAndBottomBorder)
 		}
 		sb.Write([]byte("\n"))
 	}
@@ -109,4 +112,19 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 
 	return buff.String(), nil
 
+}
+
+func calculateNumRows(numGames, maxRowLength int) int {
+	gameLength := len(topAndBottomBorder)
+	allGamesLength := gameLength * numGames
+	rows := float64(allGamesLength) / float64(maxRowLength)
+	num, remainder := math.Modf(rows)
+	if remainder > 0 {
+		num++
+	}
+	return int(num)
+}
+
+func calculateGamesPerLine(gameLength, maxRowLength int) int {
+	return 0
 }
