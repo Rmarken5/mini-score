@@ -108,6 +108,42 @@ type Linescore struct {
 	Balls                int       `json:"balls"`
 	Strikes              int       `json:"strikes"`
 	Outs                 int       `json:"outs"`
+	Innings              Innings   `json:"innings"`
+}
+type Innings []Inning
+type Inning struct {
+	Num        int    `json:"num,omitempty"`
+	OrdinalNum string `json:"ordinalNum,omitempty"`
+	Home       Home   `json:"home,omitempty"`
+	Away       Away   `json:"away,omitempty"`
+}
+
+func (i Innings) PrintInningRuns() (home string, away string) {
+	iLen := len(i)
+	for _, inn := range i {
+		away += fmt.Sprintf(" %2d", inn.Away.Runs)
+		home += fmt.Sprintf(" %2d", inn.Home.Runs)
+	}
+	if iLen < 9 {
+		for k := 0; k < 9-iLen; k++ {
+			away += "   "
+			home += "   "
+		}
+	}
+	return // Naked return
+}
+
+type Home struct {
+	Runs       int `json:"runs,omitempty"`
+	Hits       int `json:"hits,omitempty"`
+	Errors     int `json:"errors,omitempty"`
+	LeftOnBase int `json:"leftOnBase,omitempty"`
+}
+type Away struct {
+	Runs       int `json:"runs,omitempty"`
+	Hits       int `json:"hits,omitempty"`
+	Errors     int `json:"errors,omitempty"`
+	LeftOnBase int `json:"leftOnBase,omitempty"`
 }
 
 type TeamStat struct {

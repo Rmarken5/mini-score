@@ -34,18 +34,11 @@ func HandleUserAgent(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func isMobile(ctx context.Context) bool {
+func IsMobile(ctx context.Context) bool {
 	val := ctx.Value(userAgentKey)
 	var isMobile, ok bool
 	if isMobile, ok = val.(bool); !ok {
 		return true // if not able to find user agent on context, default to mobile for mobile first dev.
 	}
 	return isMobile
-}
-
-func MaxLineLength(ctx context.Context) int {
-	if isMobile(ctx) {
-		return 80
-	}
-	return 120
 }

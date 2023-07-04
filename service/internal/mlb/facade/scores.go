@@ -34,6 +34,10 @@ func ProcessScores(facade ScoreFacade, ctx context.Context, date time.Time) (str
 }
 
 func (sf *ScoreFacadeImpl) processScores(ctx context.Context, date time.Time) (string, error) {
+	gamesPerLine := 1
+	if !user_agent.IsMobile(ctx) {
+		gamesPerLine = 3
+	}
 
 	games, err := sf.gameFetcher.FetchGames(date)
 	if err != nil {
@@ -58,7 +62,7 @@ func (sf *ScoreFacadeImpl) processScores(ctx context.Context, date time.Time) (s
 	}
 	wg.Wait()
 	sort.Sort(fetcher.ByGameTime(scores))
-	w := writer.NewPainter(user_agent.MaxLineLength(ctx), date)
+	w := writer.NewPainter(gamesPerLine, date)
 	s, err := w.Write(scores)
 	if err != nil {
 		return "", err

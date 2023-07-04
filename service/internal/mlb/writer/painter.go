@@ -5,7 +5,6 @@ import (
 	"embed"
 	"fmt"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
-	"math"
 	"strings"
 	"text/template"
 	"time"
@@ -16,13 +15,13 @@ var gtTemplate embed.FS
 
 var layout = "Jan, 02 2006"
 
-const topAndBottomBorder = " * * * * * * * * * * "
-
 type (
 	Painter struct {
 		date             time.Time
 		lineLength       int
 		Games            int
+		TopBottomBorder  []string
+		InningsLine      []string
 		AwayTeamLine     []string
 		GameProgressLine []string
 		HomeTeamLine     []string
@@ -35,8 +34,30 @@ func NewPainter(lineLength int, date time.Time) *Painter {
 
 func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 	p.Games++
-	p.AwayTeamLine = append(p.AwayTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Away.String(), score.LiveData.Linescore.Teams.Away.String()))
-	p.HomeTeamLine = append(p.HomeTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Home.String(), score.LiveData.Linescore.Teams.Home.String()))
+
+	awayInnings, homeInnings := score.LiveData.Linescore.Innings.PrintInningRuns()
+
+	inningLen := 9
+	if inningLen < len(score.LiveData.Linescore.Innings) {
+		inningLen = len(score.LiveData.Linescore.Innings)
+	}
+	inningHeader := " *         "
+	for i := 0; i < inningLen; i++ {
+		inningHeader += fmt.Sprintf("%d  ", i+1)
+	}
+	inningHeader += "  R  H  E  * "
+	headerLen := len(inningHeader)
+
+	topAndBottomBorder := ""
+	for i := 0; i < (headerLen-2)/2; i++ {
+		topAndBottomBorder += " *"
+	}
+
+	p.TopBottomBorder = append(p.TopBottomBorder, topAndBottomBorder)
+	p.InningsLine = append(p.InningsLine, inningHeader)
+
+	p.AwayTeamLine = append(p.AwayTeamLine, fmt.Sprintf(" * %s   %s   %s  * ", score.GameData.Teams.Away.String(), awayInnings, score.LiveData.Linescore.Teams.Away.String()))
+	p.HomeTeamLine = append(p.HomeTeamLine, fmt.Sprintf(" * %s   %s   %s  * ", score.GameData.Teams.Home.String(), homeInnings, score.LiveData.Linescore.Teams.Home.String()))
 	var gameStatus string
 	switch score.GameData.Status.StatusCode {
 	case "F":
@@ -46,8 +67,8 @@ func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 	default:
 		gameStatus = fmt.Sprintf("%s %s", score.LiveData.Linescore.InningHalf, score.LiveData.Linescore.CurrentInningOrdinal)
 	}
-
-	gameStatusString := fmt.Sprintf(" * %-15s * ", gameStatus)
+	formatter := " * %-" + fmt.Sprintf("%d", len(inningHeader)-6) + "s * "
+	gameStatusString := fmt.Sprintf(formatter, gameStatus)
 
 	p.GameProgressLine = append(p.GameProgressLine, gameStatusString)
 
@@ -67,11 +88,11 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 		}
 
 		for j := 0; j < limit; j++ {
-			sb.WriteString(topAndBottomBorder)
+			sb.WriteString(p.TopBottomBorder[i+j])
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" *         R  H  E * ")
+			sb.WriteString(p.InningsLine[i+j])
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
@@ -87,7 +108,7 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
-			sb.WriteString(topAndBottomBorder)
+			sb.WriteString(p.TopBottomBorder[i+j])
 		}
 		sb.Write([]byte("\n"))
 	}
@@ -112,19 +133,4 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 
 	return buff.String(), nil
 
-}
-
-func calculateNumRows(numGames, maxRowLength int) int {
-	gameLength := len(topAndBottomBorder)
-	allGamesLength := gameLength * numGames
-	rows := float64(allGamesLength) / float64(maxRowLength)
-	num, remainder := math.Modf(rows)
-	if remainder > 0 {
-		num++
-	}
-	return int(num)
-}
-
-func calculateGamesPerLine(gameLength, maxRowLength int) int {
-	return 0
 }
