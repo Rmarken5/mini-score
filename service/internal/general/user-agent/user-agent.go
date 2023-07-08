@@ -1,4 +1,4 @@
-package middleware
+package user_agent
 
 import (
 	"context"

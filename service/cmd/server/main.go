@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	genhandle "github.com/rmarken5/mini-score/service/internal/general/http/handlers"
-	genmid "github.com/rmarken5/mini-score/service/internal/general/http/middleware"
+	genmid "github.com/rmarken5/mini-score/service/internal/general/user-agent"
 	"github.com/rmarken5/mini-score/service/internal/mlb/facade"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"github.com/rmarken5/mini-score/service/internal/mlb/http/http"

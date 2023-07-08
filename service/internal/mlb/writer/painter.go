@@ -18,22 +18,53 @@ var layout = "Jan, 02 2006"
 type (
 	Painter struct {
 		date             time.Time
-		gamesPerLine     int
+		lineLength       int
 		Games            int
+		TopBottomBorder  []string
+		InningsLine      []string
 		AwayTeamLine     []string
 		GameProgressLine []string
 		HomeTeamLine     []string
 	}
 )
 
-func NewPainter(gamesPerLine int, date time.Time) *Painter {
-	return &Painter{gamesPerLine: gamesPerLine, date: date}
+func NewPainter(lineLength int, date time.Time) *Painter {
+	return &Painter{lineLength: lineLength, date: date}
 }
 
 func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 	p.Games++
-	p.AwayTeamLine = append(p.AwayTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Away.String(), score.LiveData.Linescore.Teams.Away.String()))
-	p.HomeTeamLine = append(p.HomeTeamLine, fmt.Sprintf(" * %s    %s * ", score.GameData.Teams.Home.String(), score.LiveData.Linescore.Teams.Home.String()))
+
+	awayInnings, homeInnings := score.LiveData.Linescore.Innings.PrintInningRuns()
+
+	inningLen := 9
+	if inningLen < len(score.LiveData.Linescore.Innings) {
+		inningLen = len(score.LiveData.Linescore.Innings)
+	}
+	inningHeader := " *         "
+	for i := 0; i < inningLen; i++ {
+		inningHeader += fmt.Sprintf("%d  ", i+1)
+	}
+	inningHeader += "  R  H  E  * "
+	inningHeaderLen := len(inningHeader)
+
+	// add one to make even two characters are written at a time.
+	if inningHeaderLen%2 > 0 {
+		inningHeaderLen++
+	}
+
+	topAndBottomBorder := ""
+
+	for i := 0; i < (inningHeaderLen-2)/2; i++ {
+		topAndBottomBorder += " *"
+	}
+	topAndBottomBorder += " "
+
+	p.TopBottomBorder = append(p.TopBottomBorder, topAndBottomBorder)
+	p.InningsLine = append(p.InningsLine, inningHeader)
+
+	p.AwayTeamLine = append(p.AwayTeamLine, fmt.Sprintf(" * %s   %s   %s  * ", score.GameData.Teams.Away.String(), awayInnings, score.LiveData.Linescore.Teams.Away.String()))
+	p.HomeTeamLine = append(p.HomeTeamLine, fmt.Sprintf(" * %s   %s   %s  * ", score.GameData.Teams.Home.String(), homeInnings, score.LiveData.Linescore.Teams.Home.String()))
 	var gameStatus string
 	switch score.GameData.Status.StatusCode {
 	case "F":
@@ -43,8 +74,8 @@ func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 	default:
 		gameStatus = fmt.Sprintf("%s %s", score.LiveData.Linescore.InningHalf, score.LiveData.Linescore.CurrentInningOrdinal)
 	}
-
-	gameStatusString := fmt.Sprintf(" * %-15s * ", gameStatus)
+	formatter := " * %-" + fmt.Sprintf("%d", len(inningHeader)-6) + "s * "
+	gameStatusString := fmt.Sprintf(formatter, gameStatus)
 
 	p.GameProgressLine = append(p.GameProgressLine, gameStatusString)
 
@@ -57,18 +88,18 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 
 	sb := strings.Builder{}
 
-	for i := 0; i < p.Games; i += p.gamesPerLine {
-		var limit int = p.gamesPerLine
-		if p.Games < i+p.gamesPerLine {
-			limit = p.gamesPerLine - ((i + p.gamesPerLine) - p.Games)
+	for i := 0; i < p.Games; i += p.lineLength {
+		var limit int = p.lineLength
+		if p.Games < i+p.lineLength {
+			limit = p.lineLength - ((i + p.lineLength) - p.Games)
 		}
 
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" * * * * * * * * * * ")
+			sb.WriteString(p.TopBottomBorder[i+j])
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" *         R  H  E * ")
+			sb.WriteString(p.InningsLine[i+j])
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
@@ -84,7 +115,7 @@ func (p *Painter) Write(scores []*fetcher.FetchScoreResponse) (string, error) {
 		}
 		sb.Write([]byte("\n"))
 		for j := 0; j < limit; j++ {
-			sb.WriteString(" * * * * * * * * * * ")
+			sb.WriteString(p.TopBottomBorder[i+j])
 		}
 		sb.Write([]byte("\n"))
 	}
