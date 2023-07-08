@@ -46,12 +46,19 @@ func (p *Painter) addScore(score *fetcher.FetchScoreResponse) {
 		inningHeader += fmt.Sprintf("%d  ", i+1)
 	}
 	inningHeader += "  R  H  E  * "
-	headerLen := len(inningHeader)
+	inningHeaderLen := len(inningHeader)
+
+	// add one to make even two characters are written at a time.
+	if inningHeaderLen%2 > 0 {
+		inningHeaderLen++
+	}
 
 	topAndBottomBorder := ""
-	for i := 0; i < (headerLen-2)/2; i++ {
+
+	for i := 0; i < (inningHeaderLen-2)/2; i++ {
 		topAndBottomBorder += " *"
 	}
+	topAndBottomBorder += " "
 
 	p.TopBottomBorder = append(p.TopBottomBorder, topAndBottomBorder)
 	p.InningsLine = append(p.InningsLine, inningHeader)
