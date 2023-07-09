@@ -118,7 +118,7 @@ type Inning struct {
 	Away       Away   `json:"away,omitempty"`
 }
 
-func (i Innings) PrintInningRuns() (home string, away string) {
+func (i Innings) PrintInningRuns() (away string, home string) {
 	iLen := len(i)
 	for _, inn := range i {
 		away += fmt.Sprintf(" %2d", inn.Away.Runs)
