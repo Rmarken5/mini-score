@@ -120,9 +120,13 @@ type Inning struct {
 
 func (i Innings) PrintInningRuns() (away string, home string) {
 	iLen := len(i)
-	for _, inn := range i {
-		away += fmt.Sprintf(" %2d", inn.Away.Runs)
-		home += fmt.Sprintf(" %2d", inn.Home.Runs)
+	formatter := "%3d"
+	for idx, inn := range i {
+		if idx > 8 {
+			formatter = "%4d"
+		}
+		away += fmt.Sprintf(formatter, inn.Away.Runs)
+		home += fmt.Sprintf(formatter, inn.Home.Runs)
 	}
 	if iLen < 9 {
 		for k := 0; k < 9-iLen; k++ {
