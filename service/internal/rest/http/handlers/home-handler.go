@@ -24,7 +24,7 @@ func (h *IndexHandler) ServeHTTP(c echo.Context) error {
 
 	file, err := template.ParseFS(files, "templates/index.gotmpl")
 	if err != nil {
-		h.logger.Printf("Error opening file from template: %w", err)
+		h.logger.Printf("Error opening file from template: %s", err)
 		return err
 	}
 

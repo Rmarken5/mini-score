@@ -3,9 +3,9 @@ package facade
 import (
 	"context"
 	"fmt"
-	"github.com/rmarken5/mini-score/service/internal/general/user-agent"
 	"github.com/rmarken5/mini-score/service/internal/mlb/fetcher"
 	"github.com/rmarken5/mini-score/service/internal/mlb/writer"
+	"github.com/rmarken5/mini-score/service/internal/rest/user-agent"
 	"sort"
 	"sync"
 	"time"

@@ -2,8 +2,8 @@ package fetcher
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +24,7 @@ func TestFetcher_FetchGames(t *testing.T) {
 		"should marshal games to model": {
 			mockHttpClient: func() *httptest.Server {
 				mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// Define the mock response
+					// Define the mocks response
 					response := gameResp
 
 					// Set the response status code and content type
@@ -67,8 +67,7 @@ func TestFetcher_FetchGames(t *testing.T) {
 }
 
 func TestFetcher_FetchScore(t *testing.T) {
-	tyme, err := time.Parse("2006-01-02 3:04 PM", "2023-06-22 5:05 PM")
-	require.NoError(t, err)
+
 	testCases := map[string]struct {
 		mockHttpClient   func() *httptest.Server
 		expectedResponse FetchScoreResponse
@@ -76,7 +75,7 @@ func TestFetcher_FetchScore(t *testing.T) {
 		"should return linescore from the game": {
 			mockHttpClient: func() *httptest.Server {
 				mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// Define the mock response
+					// Define the mocks response
 					response := scoresResp
 
 					// Set the response status code and content type
@@ -116,7 +115,154 @@ func TestFetcher_FetchScore(t *testing.T) {
 						Balls:   3,
 						Strikes: 2,
 						Outs:    3,
-					}},
+						Innings: []Inning{
+							{
+								Num:        1,
+								OrdinalNum: "1st",
+								Home: Home{
+									Runs:       0,
+									Hits:       0,
+									Errors:     1,
+									LeftOnBase: 0,
+								},
+								Away: Away{
+									Runs:       1,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+							{
+								Num:        2,
+								OrdinalNum: "2nd",
+								Home: Home{
+									Runs:       0,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 2,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       0,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+							},
+							{
+								Num:        3,
+								OrdinalNum: "3rd",
+								Home: Home{
+									Runs:       1,
+									Hits:       1,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       0,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+							},
+							{
+								Num:        4,
+								OrdinalNum: "4th",
+								Home: Home{
+									Runs:       0,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 2,
+								},
+								Away: Away{
+									Runs:       1,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+							{
+								Num:        5,
+								OrdinalNum: "5th",
+								Home: Home{
+									Runs:       0,
+									Hits:       1,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       1,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+							{
+								Num:        6,
+								OrdinalNum: "6th",
+								Home: Home{
+									Runs:       0,
+									Hits:       0,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       0,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+							{
+								Num:        7,
+								OrdinalNum: "7th",
+								Home: Home{
+									Runs:       0,
+									Hits:       1,
+									Errors:     1,
+									LeftOnBase: 1,
+								},
+								Away: Away{
+									Runs:       3,
+									Hits:       1,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+							},
+							{
+								Num:        8,
+								OrdinalNum: "8th",
+								Home: Home{
+									Runs:       0,
+									Hits:       0,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       1,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+							{
+								Num:        9,
+								OrdinalNum: "9th",
+								Home: Home{
+									Runs:       2,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 0,
+								},
+								Away: Away{
+									Runs:       0,
+									Hits:       2,
+									Errors:     0,
+									LeftOnBase: 1,
+								},
+							},
+						},
+					},
+				},
 				GameData: GameData{
 					Status: GameStatus{
 						AbstractGameState: "Final",
@@ -146,8 +292,9 @@ func TestFetcher_FetchScore(t *testing.T) {
 							Active:        true,
 						},
 					},
+
 					DateTime: DateTime{
-						DateTime:     tyme,
+						DateTime:     time.Date(2023, 6, 22, 17, 5, 0, 0, time.UTC),
 						OriginalDate: "2023-06-22",
 						OfficialDate: "2023-06-22",
 						DayNight:     "day",
@@ -170,7 +317,8 @@ func TestFetcher_FetchScore(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.EqualValues(t, tc.expectedResponse, score)
+
+			fmt.Printf("%+v\n", score)
 		})
 	}
-
 }
