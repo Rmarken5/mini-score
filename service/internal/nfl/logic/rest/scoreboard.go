@@ -18,6 +18,8 @@ const (
 	headingTimeFormat = "Jan, 02 2006"
 )
 
+var _ ScoreboardFacade = &Controller{}
+
 type (
 	ScoreboardFacade interface {
 		GetScoreboardForDate(date time.Time) (Scores, error)
@@ -50,6 +52,7 @@ func NewScoreboardFacade(logger zerolog.Logger, db *sqlx.DB) *Controller {
 		repo:   repository.NewRepository(logger, db),
 	}
 }
+
 func (c *Controller) GetScoreboardForDate(date time.Time) (Scores, error) {
 	logger := c.logger.With().Str("method", "GetScoreboardForDate").Logger()
 	logger.Info().Msgf("getting scores at %s", date)
