@@ -10,7 +10,7 @@ import (
 const (
 	scoreboardURL = "https://cdn.espn.com/core/nfl/scoreboard?xhr=1&limit=50"
 )
-
+//go:generate mockgen -destination ./schedule_requestor_mock.go -package rest . Requester
 type (
 	Requester interface {
 		GetScoreboard() (ScoreboardResponse, error)

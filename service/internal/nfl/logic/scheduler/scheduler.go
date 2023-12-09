@@ -87,7 +87,7 @@ func (s *Scheduler) SynchronizeCurrentWeek(gameChan chan<- repository.Game) erro
 
 		games, err := s.controller.GetGamesBetweenDates(startTime, endTime)
 		if err != nil {
-			logger.Info().Err(err).Msgf("error synchronizing current week: %v")
+			logger.Info().Err(err).Msgf("error synchronizing current week")
 		}
 		for _, game := range games {
 			logger.Debug().Fields(game).Msgf("adding game to channel")

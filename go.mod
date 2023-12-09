@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/labstack/echo/v4 v4.10.2
@@ -12,6 +11,7 @@ require (
 	github.com/mileusna/useragent v1.3.3
 	github.com/rs/zerolog v1.30.0
 	github.com/stretchr/testify v1.8.4
+	go.uber.org/mock v0.3.0
 )
 
 require (

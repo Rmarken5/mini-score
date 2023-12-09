@@ -116,9 +116,10 @@ func getScoresForTeam(gameID, teamName string, quarterScores []repository.GameTe
 	return scores
 }
 
-func (s Scores) PrintScoreboard(writer io.Writer, scoresPerLine int) error {
+func (s Scores) PrintScoreboard(writer io.Writer, scoresDate time.Time, scoresPerLine int) error {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("%s\n", time.Now().Local().Format(headingTimeFormat)))
+
+	sb.WriteString(fmt.Sprintf("%s\n", scoresDate.Format(headingTimeFormat)))
 	for i := 0; i < len(s); {
 		diff := 0
 		if scoresPerLine+i >= len(s) {

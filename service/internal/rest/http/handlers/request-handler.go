@@ -65,7 +65,7 @@ func (s *Server) PrintFootballGames(c echo.Context) error {
 	}
 
 	c.Response().Header().Set("Content-Type", "text/plain")
-	err = scores.PrintScoreboard(c.Response(), gamesPerLine)
+	err = scores.PrintScoreboard(c.Response(), dateObj, gamesPerLine)
 	if err != nil {
 		return err
 	}
