@@ -2,26 +2,23 @@ package controller
 
 import (
 	"errors"
-	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	repository2 "github.com/rmarken5/mini-score/service/internal/nfl/logic/internal/data-access/db/repository"
+	"github.com/rmarken5/mini-score/service/internal/nfl/logic/internal/data-access/db/repository"
+	"github.com/rmarken5/mini-score/service/internal/nfl/logic/internal/data-access/http/rest"
 	"github.com/rmarken5/mini-score/service/internal/nfl/logic/internal/data-access/http/scraper"
-	"github.com/rmarken5/mini-score/service/internal/nfl/logic/scheduler/controller/internal/mocks"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
 
-//go:generate mockgen -destination ./internal/mocks/repository_mock.go -package mocks -source=../../../../nfl/data-access/db/repository/repository.go Repository
-//go:generate mockgen -destination ./internal/mocks/schedule_scraper_mock.go -package mocks  -source=../../../../nfl/data-access/http/scraper/scraper.go ScheduleScraper
-//go:generate mockgen -destination ./internal/mocks/schedule_requestor_mock.go -package mocks  -source=../../../../nfl/data-access/http/rest/requester.go Requester
-
 func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 	var (
-		repoGameOne = repository2.Game{
+		repoGameOne = repository.Game{
 			ID:        uuid.NewString(),
 			GameTime:  time.Now(),
 			Quarter:   "",
@@ -35,13 +32,13 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 	)
 
 	testCases := map[string]struct {
-		mockScraper   func(ctrl *gomock.Controller) *mocks.MockScheduleScraper
-		mockRepo      func(ctrl *gomock.Controller) *mocks.MockRepository
-		mockRequester func(ctrl *gomock.Controller) *mocks.MockRequester
+		mockScraper   func(ctrl *gomock.Controller) *scraper.MockScheduleScraper
+		mockRepo      func(ctrl *gomock.Controller) *repository.MockRepository
+		mockRequester func(ctrl *gomock.Controller) *rest.MockRequester
 	}{
 		"should insert game when game doesn't exist": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -136,17 +133,17 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 				return mockScraper
 			},
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
-				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository2.Game{}, repository2.ErrNoGame).AnyTimes()
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
+				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository.Game{}, repository.ErrNoGame).AnyTimes()
 				mockRepo.EXPECT().InsertGame(gomock.Any()).Return(nil).AnyTimes()
-				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository2.Team{ID: uuid.New()}, nil).AnyTimes()
+				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository.Team{ID: uuid.New()}, nil).AnyTimes()
 				return mockRepo
 			},
 		},
 		"should continue when insert fails": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -241,17 +238,17 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 				return mockScraper
 			},
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
-				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository2.Game{}, repository2.ErrNoGame).AnyTimes()
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
+				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository.Game{}, repository.ErrNoGame).AnyTimes()
 				mockRepo.EXPECT().InsertGame(gomock.Any()).Return(errors.New("error")).AnyTimes()
-				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository2.Team{ID: uuid.New()}, nil).AnyTimes()
+				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository.Team{ID: uuid.New()}, nil).AnyTimes()
 				return mockRepo
 			},
 		},
 		"should continue when update when game exists": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -346,18 +343,18 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 				return mockScraper
 			},
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
 				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repoGameOne, nil).AnyTimes()
 				mockRepo.EXPECT().UpdateGameTime(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 				mockRepo.EXPECT().UpdateQuarterScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository2.Team{ID: uuid.New()}, nil).AnyTimes()
+				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository.Team{ID: uuid.New()}, nil).AnyTimes()
 				return mockRepo
 			},
 		},
 		"should continue when update fails": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -452,18 +449,18 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 				return mockScraper
 			},
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
 				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repoGameOne, nil).AnyTimes()
 				mockRepo.EXPECT().UpdateGameTime(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 				mockRepo.EXPECT().UpdateQuarterScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("error")).AnyTimes()
-				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository2.Team{ID: uuid.New()}, nil).AnyTimes()
+				mockRepo.EXPECT().GetTeamByAbv(gomock.Any()).Return(&repository.Team{ID: uuid.New()}, nil).AnyTimes()
 				return mockRepo
 			},
 		},
 		"should continue when getGame fails": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -558,15 +555,15 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 
 				return mockScraper
 			},
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
-				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository2.Game{}, errors.New("error")).AnyTimes()
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
+				mockRepo.EXPECT().GetGame(gomock.Any()).Return(repository.Game{}, errors.New("error")).AnyTimes()
 				return mockRepo
 			},
 		},
 		"should continue when FetchGamesForWeeks fails": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week{{
 					Text:  uuid.NewString(),
 					Label: uuid.NewString(),
@@ -649,8 +646,8 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 			},
 		},
 		"should continue when FetchSchedule fails": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScraper.EXPECT().FetchSchedule().Return([]scraper.Week(nil), errors.New("error")).AnyTimes()
 
 				return mockScraper
@@ -664,22 +661,31 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			exitChannel := make(chan bool)
 			ctrl := gomock.NewController(t)
-			var mockRepository *mocks.MockRepository
+			var mockRepository *repository.MockRepository
 			if tc.mockRepo != nil {
 				mockRepository = tc.mockRepo(ctrl)
 			}
 
-			var mockRequester *mocks.MockRequester
+			var mockRequester *rest.MockRequester
 			if tc.mockRequester != nil {
 				mockRequester = tc.mockRequester(ctrl)
 			}
 
-			var mockScheduleScraper *mocks.MockScheduleScraper
+			var mockScheduleScraper *scraper.MockScheduleScraper
 			if tc.mockScraper != nil {
 				mockScheduleScraper = tc.mockScraper(ctrl)
 			}
 
-			l := NewLogic(zerolog.New(os.Stdout), mockScheduleScraper, mockRepository, mockRequester)
+			l := Logic{
+				logger:               zerolog.New(os.Stdout),
+				scrapper:             mockScheduleScraper,
+				repo:                 mockRepository,
+				requester:            mockRequester,
+				gameTeamQuarterCache: nil,
+				scoreCacheLock:       sync.RWMutex{},
+				clockCache:           nil,
+				clockCacheLock:       sync.RWMutex{},
+			}
 
 			go func() {
 				l.KeepScheduleSynchronized(exitChannel, time.Second)
@@ -694,14 +700,14 @@ func TestLogic_KeepScheduleSynchronized(t *testing.T) {
 func TestLogic_UpdateGame(t *testing.T) {
 
 	testCases := map[string]struct {
-		mockRepo     func(ctrl *gomock.Controller) *mocks.MockRepository
+		mockRepo     func(ctrl *gomock.Controller) *repository.MockRepository
 		haveGameInfo scraper.GameInfo
-		haveLogic    func(mockRepository *mocks.MockRepository) *Logic
+		haveLogic    func(mockRepository *repository.MockRepository) *Logic
 	}{
 		"should insert scores for quarters when they don't exist": {
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepository := mocks.NewMockRepository(ctrl)
-				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository2.GameQuarterScore{}, repository2.ErrNoQuarterScore).Times(2)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepository := repository.NewMockRepository(ctrl)
+				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository.GameQuarterScore{}, repository.ErrNoQuarterScore).Times(2)
 				mockRepository.EXPECT().InsertQuarterScore(gomock.Any()).Return(nil).Times(2)
 
 				return mockRepository
@@ -744,7 +750,7 @@ func TestLogic_UpdateGame(t *testing.T) {
 					},
 				},
 			},
-			haveLogic: func(mockRepository *mocks.MockRepository) *Logic {
+			haveLogic: func(mockRepository *repository.MockRepository) *Logic {
 				l := &Logic{
 					logger: zerolog.Nop(), repo: mockRepository,
 					gameTeamQuarterCache: make(map[string]int),
@@ -753,9 +759,9 @@ func TestLogic_UpdateGame(t *testing.T) {
 			},
 		},
 		"should update scores for quarters when they exist": {
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepository := mocks.NewMockRepository(ctrl)
-				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository2.GameQuarterScore{}, nil).Times(2)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepository := repository.NewMockRepository(ctrl)
+				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository.GameQuarterScore{}, nil).Times(2)
 				mockRepository.EXPECT().UpdateQuarterScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 				return mockRepository
@@ -798,7 +804,7 @@ func TestLogic_UpdateGame(t *testing.T) {
 					},
 				},
 			},
-			haveLogic: func(mockRepository *mocks.MockRepository) *Logic {
+			haveLogic: func(mockRepository *repository.MockRepository) *Logic {
 				l := &Logic{
 					logger: zerolog.Nop(), repo: mockRepository,
 					gameTeamQuarterCache: make(map[string]int),
@@ -808,9 +814,9 @@ func TestLogic_UpdateGame(t *testing.T) {
 		},
 		"should skip processing when cache is current": {
 
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepository := mocks.NewMockRepository(ctrl)
-				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository2.GameQuarterScore{}, nil).Times(0)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepository := repository.NewMockRepository(ctrl)
+				mockRepository.EXPECT().GetQuarterScoreBy(gomock.Any(), gomock.Any(), gomock.Any()).Return(repository.GameQuarterScore{}, nil).Times(0)
 				mockRepository.EXPECT().UpdateQuarterScore(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(0)
 
 				return mockRepository
@@ -853,7 +859,7 @@ func TestLogic_UpdateGame(t *testing.T) {
 					},
 				},
 			},
-			haveLogic: func(mockRepository *mocks.MockRepository) *Logic {
+			haveLogic: func(mockRepository *repository.MockRepository) *Logic {
 				gameTeamQuarterCache := make(map[string]int)
 				gameTeamQuarterCache["123ABC1"] = 7
 				gameTeamQuarterCache["123DEF1"] = 10
@@ -871,7 +877,7 @@ func TestLogic_UpdateGame(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			var mockRepo *mocks.MockRepository
+			var mockRepo *repository.MockRepository
 			if tc.mockRepo != nil {
 				mockRepo = tc.mockRepo(ctrl)
 			}
@@ -888,20 +894,20 @@ func TestLogic_UpdateGame(t *testing.T) {
 func TestLogic_GetGamesBetweenDates(t *testing.T) {
 	var myErr = errors.New("error")
 	testCases := map[string]struct {
-		mockRepo      func(ctrl *gomock.Controller) *mocks.MockRepository
+		mockRepo      func(ctrl *gomock.Controller) *repository.MockRepository
 		expectedError error
 	}{
 		"should get games from between dates from repo": {
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
-				mockRepo.EXPECT().GetGames(gomock.Any(), gomock.Any()).Return([]repository2.Game{}, nil)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
+				mockRepo.EXPECT().GetGames(gomock.Any(), gomock.Any()).Return([]repository.Game{}, nil)
 				return mockRepo
 			},
 		},
 		"should log and return error from repo": {
-			mockRepo: func(ctrl *gomock.Controller) *mocks.MockRepository {
-				mockRepo := mocks.NewMockRepository(ctrl)
-				mockRepo.EXPECT().GetGames(gomock.Any(), gomock.Any()).Return([]repository2.Game(nil), myErr)
+			mockRepo: func(ctrl *gomock.Controller) *repository.MockRepository {
+				mockRepo := repository.NewMockRepository(ctrl)
+				mockRepo.EXPECT().GetGames(gomock.Any(), gomock.Any()).Return([]repository.Game(nil), myErr)
 				return mockRepo
 			},
 			expectedError: myErr,
@@ -913,14 +919,23 @@ func TestLogic_GetGamesBetweenDates(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
-			var mockRepo *mocks.MockRepository
+			var mockRepo *repository.MockRepository
 			if tc.mockRepo != nil {
 				mockRepo = tc.mockRepo(ctrl)
 			}
 
-			logic := NewLogic(zerolog.New(os.Stdout), nil, mockRepo, nil)
+			l := Logic{
+				logger:               zerolog.New(os.Stdout),
+				scrapper:             nil,
+				repo:                 mockRepo,
+				requester:            nil,
+				gameTeamQuarterCache: nil,
+				scoreCacheLock:       sync.RWMutex{},
+				clockCache:           nil,
+				clockCacheLock:       sync.RWMutex{},
+			}
 
-			_, err := logic.GetGamesBetweenDates(time.Now(), time.Now())
+			_, err := l.GetGamesBetweenDates(time.Now(), time.Now())
 			assert.ErrorIs(t, err, tc.expectedError)
 		})
 	}
@@ -929,19 +944,19 @@ func TestLogic_GetGamesBetweenDates(t *testing.T) {
 func TestLogic_GetGameInfo(t *testing.T) {
 	var myErr = errors.New("error")
 	testCases := map[string]struct {
-		mockScraper   func(ctrl *gomock.Controller) *mocks.MockScheduleScraper
+		mockScraper   func(ctrl *gomock.Controller) *scraper.MockScheduleScraper
 		expectedError error
 	}{
 		"should get gameInfo from scraper": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScheduleScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScheduleScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScheduleScraper.EXPECT().FetchGameInfo(gomock.Any()).Return(scraper.GameInfo{}, nil)
 				return mockScheduleScraper
 			},
 		},
 		"should log and return error from scraper": {
-			mockScraper: func(ctrl *gomock.Controller) *mocks.MockScheduleScraper {
-				mockScheduleScraper := mocks.NewMockScheduleScraper(ctrl)
+			mockScraper: func(ctrl *gomock.Controller) *scraper.MockScheduleScraper {
+				mockScheduleScraper := scraper.NewMockScheduleScraper(ctrl)
 				mockScheduleScraper.EXPECT().FetchGameInfo(gomock.Any()).Return(scraper.GameInfo{}, myErr)
 				return mockScheduleScraper
 			},
@@ -954,14 +969,23 @@ func TestLogic_GetGameInfo(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
-			var mockScraper *mocks.MockScheduleScraper
+			var mockScraper *scraper.MockScheduleScraper
 			if tc.mockScraper != nil {
 				mockScraper = tc.mockScraper(ctrl)
 			}
 
-			logic := NewLogic(zerolog.New(os.Stdout), mockScraper, nil, nil)
+			l := Logic{
+				logger:               zerolog.New(os.Stdout),
+				scrapper:             mockScraper,
+				repo:                 nil,
+				requester:            nil,
+				gameTeamQuarterCache: nil,
+				scoreCacheLock:       sync.RWMutex{},
+				clockCache:           nil,
+				clockCacheLock:       sync.RWMutex{},
+			}
 
-			_, err := logic.GetGameInfo(uuid.NewString())
+			_, err := l.GetGameInfo(uuid.NewString())
 			assert.ErrorIs(t, err, tc.expectedError)
 		})
 	}

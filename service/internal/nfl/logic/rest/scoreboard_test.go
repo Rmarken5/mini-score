@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestScores_PrintScoreboard(t *testing.T) {
-
+	start, err := time.Parse("3:04", "1:05")
+	require.NoError(t, err, "while parsing value")
+	now := time.Now()
+	dateString := fmt.Sprintf("%s\n", now.Format(headingTimeFormat))
 	testCases := map[string]struct {
 		scores         Scores
 		boardsPerLine  int
@@ -31,14 +36,14 @@ func TestScores_PrintScoreboard(t *testing.T) {
 				},
 				quarter:   "4",
 				gameClock: "05:43",
-				startTime: "1:05",
+				startTime: start,
 			}},
-			expectedString: `* * * * * * * * * * * * *
-* Q    1  2  3  4       *
-* PIT 14  7 10  7   38  *
-* Q4             05:43  *
-* SF  10 10  3 10   33  *
-* * * * * * * * * * * * *`,
+			expectedString: dateString + `* * * * * * * * * * * * * 
+* Q    1  2  3  4       * 
+* PIT 14  7 10  7   38  * 
+* Q4             05:43  * 
+* SF  10 10  3 10   33  * 
+* * * * * * * * * * * * * `,
 			boardsPerLine: 1,
 		},
 		"print one game OT": {
@@ -57,15 +62,15 @@ func TestScores_PrintScoreboard(t *testing.T) {
 				},
 				quarter:   "4",
 				gameClock: "05:43",
-				startTime: "1:05",
+				startTime: start,
 			}},
 			boardsPerLine: 2,
-			expectedString: `* * * * * * * * * * * * * *
-* Q    1  2  3  4  5      *
-* PIT 14  7 10  7  7   45 *
-* Q4                05:43 *
-* SF  10 10  3 10  3   36 *
-* * * * * * * * * * * * * *`,
+			expectedString: dateString + `* * * * * * * * * * * * * * 
+* Q    1  2  3  4  5      * 
+* PIT 14  7 10  7  7   45 * 
+* Q4                05:43 * 
+* SF  10 10  3 10  3   36 * 
+* * * * * * * * * * * * * * `,
 		},
 		"print two games one line": {
 			scores: Scores{{
@@ -83,7 +88,7 @@ func TestScores_PrintScoreboard(t *testing.T) {
 				},
 				quarter:   "4",
 				gameClock: "05:43",
-				startTime: "1:05",
+				startTime: start,
 			},
 				{
 					awayTeam: team{
@@ -100,10 +105,10 @@ func TestScores_PrintScoreboard(t *testing.T) {
 					},
 					quarter:   "4",
 					gameClock: "05:43",
-					startTime: "1:05",
+					startTime: start,
 				},
 			},
-			expectedString: `* * * * * * * * * * * * * * * * * * * * * * * * * * 
+			expectedString: dateString + `* * * * * * * * * * * * * * * * * * * * * * * * * * 
 * Q    1  2  3  4       * * Q    1  2  3  4       * 
 * PIT 14  7 10  7   38  * * BAL 14  7 10  7   38  * 
 * Q4             05:43  * * Q4             05:43  * 
@@ -127,7 +132,7 @@ func TestScores_PrintScoreboard(t *testing.T) {
 				},
 				quarter:   "4",
 				gameClock: "05:43",
-				startTime: "1:05",
+				startTime: start,
 			},
 				{
 					awayTeam: team{
@@ -144,10 +149,10 @@ func TestScores_PrintScoreboard(t *testing.T) {
 					},
 					quarter:   "4",
 					gameClock: "05:43",
-					startTime: "1:05",
+					startTime: start,
 				},
 			},
-			expectedString: `* * * * * * * * * * * * * 
+			expectedString: dateString + `* * * * * * * * * * * * * 
 * Q    1  2  3  4       * 
 * PIT 14  7 10  7   38  * 
 * Q4             05:43  * 
@@ -177,7 +182,7 @@ func TestScores_PrintScoreboard(t *testing.T) {
 				},
 				quarter:   "4",
 				gameClock: "05:43",
-				startTime: "1:05",
+				startTime: start,
 			},
 				{
 					awayTeam: team{
@@ -194,7 +199,7 @@ func TestScores_PrintScoreboard(t *testing.T) {
 					},
 					quarter:   "4",
 					gameClock: "05:43",
-					startTime: "1:05",
+					startTime: start,
 				},
 				{
 					awayTeam: team{
@@ -211,10 +216,10 @@ func TestScores_PrintScoreboard(t *testing.T) {
 					},
 					quarter:   "4",
 					gameClock: "05:43",
-					startTime: "1:05",
+					startTime: start,
 				},
 			},
-			expectedString: `* * * * * * * * * * * * * * * * * * * * * * * * * * 
+			expectedString: dateString + `* * * * * * * * * * * * * * * * * * * * * * * * * * 
 * Q    1  2  3  4       * * Q    1  2  3  4       * 
 * PIT 14  7 10  7   38  * * BAL 14  7 10  7   38  * 
 * Q4             05:43  * * Q4             05:43  * 
@@ -234,7 +239,7 @@ func TestScores_PrintScoreboard(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			bw := bytes.Buffer{}
-			err := tc.scores.PrintScoreboard(&bw, tc.boardsPerLine)
+			err := tc.scores.PrintScoreboard(&bw, now, tc.boardsPerLine)
 			assert.ErrorIs(t, err, tc.err)
 			gotString := bw.String()
 			fmt.Println(gotString)

@@ -240,7 +240,7 @@ func TestGameDAOImpl_UpdateQuarterGameClock(t *testing.T) {
 				db:     sqlx.NewDb(db, "postgres"),
 			}
 			// Call the function
-			err = dao.UpdateQuarterGameClock("1", 1, uuid.NewString())
+			err = dao.UpdateQuarterGameClock("1", "1", uuid.NewString())
 
 			// Assert the results
 			assert.ErrorIs(t, err, tc.err)

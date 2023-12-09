@@ -5,7 +5,7 @@ import (
 	"github.com/rs/zerolog"
 	"time"
 )
-
+//go:generate mockgen -destination ./repository_mock.go -package repository -source=./repository.go Repository
 type (
 	TeamDAO interface {
 		GetTeamByAbv(abbv string) (*Team, error)

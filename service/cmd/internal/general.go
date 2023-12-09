@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 	"os"
+	"time"
 )
 
 func MustConnectDatabase(logger zerolog.Logger) *sqlx.DB {
@@ -19,17 +19,13 @@ func MustConnectDatabase(logger zerolog.Logger) *sqlx.DB {
 
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=%s options=%s", user, password, database, host, port, sslMode, options)
 	// Create the connection pool
-	db, err := sql.Open("postgres", connStr)
+	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error opening database connection")
 	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
-	// Test the connection
-	err = db.Ping()
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Error testing database connection")
-		panic(err)
-	}
-
-	return sqlx.NewDb(db, "postgres")
+	return db
 }

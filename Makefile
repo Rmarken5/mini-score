@@ -1,7 +1,6 @@
 .Phony:
 docker-build-service:
-	docker build -f ./dockerfiles/service.Dockerfile . -t gcr.io/small-biz-template/markenshop/mini-score:latest
-
+	docker build -f ./dockerfiles/service.Dockerfile . -t us-central1-docker.pkg.dev/small-biz-template/mini-score/service:$(shell date +%Y%m%d%H%M%S) -t us-central1-docker.pkg.dev/small-biz-template/mini-score/service:latest
 .Phony:
 docker-run-service:
 	docker run --rm -p 8081:8080 -e POSTGRES_USER=user \
@@ -10,7 +9,7 @@ docker-run-service:
                                  -e POSTGRES_HOST=host.docker.internal \
                                  -e POSTGRES_PORT=5432 \
                                  -e POSTGRES_PASSWORD=password \
-                                 gcr.io/small-biz-template/markenshop/mini-score:latest
+                                 us-central1-docker.pkg.dev/small-biz-template/mini-score/service:latest
 
 .Phony:
 docker-build-database:
@@ -18,11 +17,11 @@ docker-build-database:
 
 .Phony:
 docker-run-database:
-	docker run --rm -d -p 5432:5432 -v mini-score-db:/var/lib/postgresql/data gcr.io/small-biz-template/markenshop/mini-score-db:latest
+	docker run --rm -d -p 5432:5432 -v mini-score-db:/var/lib/postgresql/data -t gcr.io/small-biz-template/markenshop/mini-score-db:latest
 
 .Phony:
 docker-build-nflscheduler:
-	docker build -f ./dockerfiles/nflscheduler.Dockerfile . -t gcr.io/small-biz-template/markenshop/nflscheduler:latest
+	docker build -f ./dockerfiles/nflscheduler.Dockerfile . -t gcr.io/small-biz-template/markenshop/nflscheduler:latest -t gcr.io/small-biz-template/markenshop/nflscheduler:$(shell date +%Y%m%d%H%M%S)
 
 .Phony:
 docker-run-nflscheduler:
